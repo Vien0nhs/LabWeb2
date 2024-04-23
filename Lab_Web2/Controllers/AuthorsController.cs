@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Lab_Web2.Data;
 using Lab_Web2.Enities;
+using Lab_Web2.EntitiesDTO;
 
 namespace Lab_Web2.Controllers
 {
@@ -23,38 +24,56 @@ namespace Lab_Web2.Controllers
 
         // GET: api/Authors
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Author>>> GetAuthors()
+        public async Task<ActionResult<IEnumerable<AuthorDTO>>> GetAuthors()
         {
-            return await _context.Authors.ToListAsync();
+            var author = await _context.Authors.Select(a => new AuthorDTO
+            {
+                Id = a.Id,
+                Name = a.Name
+            }).ToListAsync();
+            return Ok(author);
         }
 
-        // GET: api/Authors/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Author>> GetAuthor(int id)
+		// GET: api/Authors/5
+		[HttpGet("{id}")]
+		public async Task<ActionResult<AuthorDTO>> GetAuthor(int id)
+		{
+			var author = await _context.Authors
+				.Where(a => a.Id == id)
+				.Select(a => new AuthorDTO
+				{
+					Id = a.Id,
+					Name = a.Name
+				})
+				.FirstOrDefaultAsync();
+
+			if (author == null)
+			{
+				return NotFound();
+			}
+
+			return Ok(author);
+		}
+
+
+		// PUT: api/Authors/5
+		// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+		[HttpPut("{id}")]
+        public async Task<IActionResult> PutAuthor(int id, UpdateAuthorDTO updateAuthorDTO)
         {
             var author = await _context.Authors.FindAsync(id);
-
             if (author == null)
             {
                 return NotFound();
             }
-
-            return author;
-        }
-
-        // PUT: api/Authors/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAuthor(int id, Author author)
-        {
             if (id != author.Id)
             {
                 return BadRequest();
             }
+			author.Name = updateAuthorDTO.Name;
+			_context.Entry(author).State = EntityState.Modified;
 
-            _context.Entry(author).State = EntityState.Modified;
-
-            try
+			try
             {
                 await _context.SaveChangesAsync();
             }
@@ -70,22 +89,26 @@ namespace Lab_Web2.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok();
         }
 
         // POST: api/Authors
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Author>> PostAuthor(Author author)
+        public async Task<ActionResult<Author>> PostAuthor(CreateAuthorDTO CAuthorDIO)
         {
+            var author = new Author
+            {
+                Name = CAuthorDIO.Name
+            };
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
+			return Ok();
 
-            return CreatedAtAction("GetAuthor", new { id = author.Id }, author);
-        }
+		}
 
-        // DELETE: api/Authors/5
-        [HttpDelete("{id}")]
+		// DELETE: api/Authors/5
+		[HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
             var author = await _context.Authors.FindAsync(id);
