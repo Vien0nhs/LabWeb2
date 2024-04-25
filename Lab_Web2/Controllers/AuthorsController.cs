@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Lab_Web2.Data;
 using Lab_Web2.Enities;
 using Lab_Web2.EntitiesDTO;
+using Lab_Web2.Repositories;
 
 namespace Lab_Web2.Controllers
 {
@@ -16,116 +17,49 @@ namespace Lab_Web2.Controllers
     public class AuthorsController : ControllerBase
     {
         private readonly LibaryDbContext _context;
+        private readonly IAuthorRepository _iauthorRepository;
 
-        public AuthorsController(LibaryDbContext context)
+        public AuthorsController(LibaryDbContext context, IAuthorRepository iauthorrepository)
         {
             _context = context;
+            _iauthorRepository = iauthorrepository;
         }
 
-        // GET: api/Authors
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuthorDTO>>> GetAuthors()
+        public async Task<ActionResult<IEnumerable<Author>>> GetAllAuthors()
         {
-            var author = await _context.Authors.Select(a => new AuthorDTO
-            {
-                Id = a.Id,
-                Name = a.Name
-            }).ToListAsync();
+            var author = await _iauthorRepository.GetAllAuthor();
             return Ok(author);
         }
 
-		// GET: api/Authors/5
 		[HttpGet("{id}")]
-		public async Task<ActionResult<AuthorDTO>> GetAuthor(int id)
+		public async Task<ActionResult<Author>> GetAuthorById(int id)
 		{
-			var author = await _context.Authors
-				.Where(a => a.Id == id)
-				.Select(a => new AuthorDTO
-				{
-					Id = a.Id,
-					Name = a.Name
-				})
-				.FirstOrDefaultAsync();
-
-			if (author == null)
-			{
-				return NotFound();
-			}
+			var author = await _iauthorRepository.GetAuthorByIdAsync(id);
 
 			return Ok(author);
 		}
 
-
-		// PUT: api/Authors/5
-		// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
 		[HttpPut("{id}")]
-        public async Task<IActionResult> PutAuthor(int id, UpdateAuthorDTO updateAuthorDTO)
+        public async Task<IActionResult> UpdateAuthor(int id, UpdateAuthorDTO updateAuthorDTO)
         {
-            var author = await _context.Authors.FindAsync(id);
-            if (author == null)
-            {
-                return NotFound();
-            }
-            if (id != author.Id)
-            {
-                return BadRequest();
-            }
-			author.Name = updateAuthorDTO.Name;
-			_context.Entry(author).State = EntityState.Modified;
-
-			try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!AuthorExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            await _iauthorRepository.UpdateAuthorAsync(id, updateAuthorDTO);
 
             return Ok();
         }
 
-        // POST: api/Authors
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Author>> PostAuthor(CreateAuthorDTO CAuthorDIO)
+        public async Task<ActionResult<Author>> CreateAuthor(CreateAuthorDTO CAuthorDIO)
         {
-            var author = new Author
-            {
-                Name = CAuthorDIO.Name
-            };
-            _context.Authors.Add(author);
-            await _context.SaveChangesAsync();
-			return Ok();
-
+            await _iauthorRepository.AddAuthorAsync(CAuthorDIO);
+			return Ok(CAuthorDIO);
 		}
 
-		// DELETE: api/Authors/5
 		[HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
-            var author = await _context.Authors.FindAsync(id);
-            if (author == null)
-            {
-                return NotFound();
-            }
-
-            _context.Authors.Remove(author);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool AuthorExists(int id)
-        {
-            return _context.Authors.Any(e => e.Id == id);
+            await _iauthorRepository.DeleteAuthorAsync(id);
+            return Ok();
         }
     }
 }

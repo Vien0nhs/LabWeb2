@@ -1,4 +1,5 @@
 using Lab_Web2.Data;
+using Lab_Web2.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
+builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddDbContext<LibaryDbContext>(options => 
 options.UseSqlServer(builder.Configuration.GetConnectionString("LCS")));
 

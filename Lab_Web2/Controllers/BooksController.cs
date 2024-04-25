@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Lab_Web2.Data;
 using Lab_Web2.Enities;
 using Lab_Web2.EntitiesDTO;
+using Lab_Web2.Repositories;
 
 namespace Lab_Web2.Controllers
 {
@@ -16,43 +17,25 @@ namespace Lab_Web2.Controllers
     public class BooksController : ControllerBase
     {
         private readonly LibaryDbContext _context;
+        private readonly IBookRepository _ibookRepository;
 
-        public BooksController(LibaryDbContext context)
+        public BooksController(LibaryDbContext context, IBookRepository ibookRepository)
         {
             _context = context;
+            _ibookRepository = ibookRepository;
         }
 
-        // GET: api/Books
         [HttpGet]
-		public async Task<ActionResult<IEnumerable<BookDTO>>> GetBooks()
+		public async Task<ActionResult<IEnumerable<BookDTO>>> GetAllBooks()
 		{
-			var book = await _context.Books.Select(a => new BookDTO
-			{
-				BookId = a.BookId,
-				Title = a.Title,
-                Description = a.Description,
-                CoverURI = a.CoverURI,
-                DateAdded = a.DateAdded,
-			}).ToListAsync();
+			var book = await _ibookRepository.GetAllBooks();
 			return Ok(book);
 		}
 
-		// GET: api/Books/5
 		[HttpGet("{id}")]
-        public async Task<ActionResult<BookDTO>> GetBook(int id)
+        public async Task<ActionResult<BookDTO>> GetBookById(int id)
         {
-            var book = await _context.Books
-                .Where(a => a.BookId == id)
-                .Select(a => new BookDTO
-                {
-                    BookId = a.BookId,
-                    Title = a.Title,
-                    Description = a.Description,
-                    CoverURI = a.CoverURI,
-                    DateAdded = a.DateAdded,
-                })
-                .FirstOrDefaultAsync();
-
+            var book = await _ibookRepository.GetBookById(id);
             if (book == null)
             {
                 return NotFound();
@@ -61,67 +44,25 @@ namespace Lab_Web2.Controllers
             return Ok(book);
         }
 
-        // PUT: api/Books/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBook(int id, Book book)
+		public async Task<IActionResult> UpdateBook(int id, BookUpdateDTO bookUpdateDTO)
+		{
+            await _ibookRepository.UpdateBook(id, bookUpdateDTO);
+			return Ok();
+		}
+
+		[HttpPost]
+        public async Task<ActionResult<Book>> CreateBook(BookDTO_CUD bookDTOCUD)
         {
-            if (id != book.BookId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(book).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BookExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            await _ibookRepository.CreateBook(bookDTOCUD);
+            return Ok();
         }
 
-        // POST: api/Books
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Book>> PostBook(Book book)
-        {
-            _context.Books.Add(book);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetBook", new { id = book.BookId }, book);
-        }
-
-        // DELETE: api/Books/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBook(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool BookExists(int id)
-        {
-            return _context.Books.Any(e => e.BookId == id);
+            await _ibookRepository.DeleteBook(id);
+            return Ok();
         }
     }
 }
