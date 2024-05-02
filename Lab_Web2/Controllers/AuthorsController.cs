@@ -24,40 +24,63 @@ namespace Lab_Web2.Controllers
             _context = context;
             _iauthorRepository = iauthorrepository;
         }
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Author>>> GetAllAuthors()
+        [HttpGet("Paged")]
+        public async Task<ActionResult<IEnumerable<Author>>> GetPagedAuthor(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10) // Pagination for Author
         {
-            var author = await _iauthorRepository.GetAllAuthor();
-            return Ok(author);
-        }
+            if (page <= 0 || pageSize <= 0) return BadRequest("Số trang và kích thước trang phải từ 1 trở lên");
+			var Authors = await _iauthorRepository.PaginationAuthorsAsync(page, pageSize);
 
+			return Ok(Authors);
+		}
+        [HttpGet("All")]
+        public async Task<ActionResult<IEnumerable<Author>>> GetAllAuthors([FromQuery] string? name = null) // Tìm all tác giả
+        {
+            var author = await _iauthorRepository.FilterAuthorsAsync(name);
+            if (author == null || !author.Any()) return NotFound($"Không tìm thấy các tác giả có tên {name}.");
+			return Ok(author);
+        }
+        [HttpGet("Sort")]
+		public async Task<ActionResult<IEnumerable<Author>>> SortingAuthors(
+			[FromQuery] string? SortField = "Name",
+			[FromQuery] bool SortDescending = false) // Sắp xếp theo tên hoặc Id trong repo service
+		{
+			var author = await _iauthorRepository.SortingAuthorsAsync(SortField, SortDescending);
+            if(author == null || !author.Any()) return NotFound("Không tìm thấy các tác giả");
+			return Ok(author);
+		}
 		[HttpGet("{id}")]
 		public async Task<ActionResult<Author>> GetAuthorById(int id)
 		{
 			var author = await _iauthorRepository.GetAuthorByIdAsync(id);
-
+            if(author == null) return NotFound($"Không tìm thấy tác giả có id {id}.");
 			return Ok(author);
 		}
 
 		[HttpPut("{id}")]
         public async Task<IActionResult> UpdateAuthor(int id, UpdateAuthorDTO updateAuthorDTO)
         {
-            await _iauthorRepository.UpdateAuthorAsync(id, updateAuthorDTO);
-
-            return Ok();
+            var author = await _context.Authors.FindAsync(id);
+            if(author == null) return NotFound($"Không tìm thấy tác giả có id {id}.");
+			if (string.IsNullOrEmpty(updateAuthorDTO.Name)) return BadRequest("Tên là bắt buộc.");
+			await _iauthorRepository.UpdateAuthorAsync(id, updateAuthorDTO);
+            return Ok(author);
         }
 
         [HttpPost]
         public async Task<ActionResult<Author>> CreateAuthor(CreateAuthorDTO CAuthorDIO)
         {
-            await _iauthorRepository.AddAuthorAsync(CAuthorDIO);
+            if (string.IsNullOrEmpty(CAuthorDIO.Name)) return BadRequest("Tên là bắt buộc.");
+			await _iauthorRepository.AddAuthorAsync(CAuthorDIO);
 			return Ok(CAuthorDIO);
 		}
 
 		[HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
+            var author = await _context.Authors.FindAsync(id);
+            if (author == null) return NotFound($"Không tìm thấy tác giả có id {id}");
             await _iauthorRepository.DeleteAuthorAsync(id);
             return Ok();
         }

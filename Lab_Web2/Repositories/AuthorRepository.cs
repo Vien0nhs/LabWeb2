@@ -5,7 +5,7 @@ using Lab_Web2.Data;
 using Lab_Web2.Enities;
 using Lab_Web2.EntitiesDTO;
 using Microsoft.AspNetCore.Http.HttpResults;
-
+#nullable disable
 namespace Lab_Web2.Repositories
 {
 	public class AuthorRepository : IAuthorRepository
@@ -21,7 +21,7 @@ namespace Lab_Web2.Repositories
 			return await _context.Authors.ToListAsync();
 		}
 
-		public async Task<Author?> GetAuthorByIdAsync(int Id)
+		public async Task<Author> GetAuthorByIdAsync(int Id)
 		{
 			return await _context.Authors.FindAsync(Id);
 		}
@@ -32,7 +32,7 @@ namespace Lab_Web2.Repositories
 				Name = createAuthorDTO.Name,
 			};
 			await _context.Authors.AddAsync(author);
-			await _context.SaveChangesAsync();		
+			await _context.SaveChangesAsync();
 		}
 
 		public async Task DeleteAuthorAsync(int Id)
@@ -53,6 +53,47 @@ namespace Lab_Web2.Repositories
 				_context.Entry(author).State = EntityState.Modified;
 				await _context.SaveChangesAsync();
 			}
+		}
+		public async Task<IEnumerable<Author>> FilterAuthorsAsync(string name = null)
+		{
+			var query = _context.Authors.AsQueryable(); //
+
+			if (!string.IsNullOrEmpty(name)) // không có ! Sẽ trả về true cho kq name rỗng hoặc null, Thêm ! Để bắt method cũng phải trả về true nếu không rỗng không null.
+			{
+				query = query.Where(a => a.Name.Contains(name));
+			}
+			return await query.ToListAsync();
+		}
+		public async Task<IEnumerable<Author>> SortingAuthorsAsync(string Sort = "Name", bool SortDescending = false)
+		{
+			var author = _context.Authors.AsQueryable();
+			switch (Sort)
+			{
+				case "Name":
+					{
+						author = SortDescending ? author.OrderByDescending(a => a.Name) : author.OrderBy(a => a.Name);
+						break;
+					}
+				case "Id":
+					{
+						author = SortDescending ? author.OrderByDescending(a => a.Id) : author.OrderBy(a => a.Id);
+						break;
+					}
+				default:
+					{
+						author = author.OrderBy(a => a.Name);
+						break;
+					}
+			}
+			return await author.ToListAsync();
+		}
+		public async Task<IEnumerable<Author>> PaginationAuthorsAsync(int page = 1, int pageSize = 10)
+		{
+			var query = _context.Authors.AsQueryable();
+			return await query
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
 		}
 	}
 }
