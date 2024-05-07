@@ -22,6 +22,32 @@ namespace Lab_Web2.Controllers
 		{
 			_publisherRepository = publisherRepository;
 		}
+		[HttpGet("Paged")]
+		public async Task<ActionResult<IEnumerable<Publisher>>> GetPagedPublisher(
+			[FromQuery] int page = 1,
+			[FromQuery] int pageSize = 10)
+		{
+			if (page <= 0 || pageSize <= 0) return BadRequest("Số trang và kích thước trang phải từ 1 trở lên");
+			var Publishers = await _publisherRepository.PaginationPublishersAsync(page, pageSize);
+
+			return Ok(Publishers);
+		}
+		[HttpGet("All")]
+		public async Task<ActionResult<IEnumerable<Publisher>>> GetAllPublishers([FromQuery] string? name = null) // Tìm all nxb
+		{
+			var publishers = await _publisherRepository.FilterPublishersAsync(name);
+			if (publishers == null || !publishers.Any()) return NotFound($"Không tìm thấy các tác giả có tên {name}.");
+			return Ok(publishers);
+		}
+		[HttpGet("Sort")]
+		public async Task<ActionResult<IEnumerable<Publisher>>> SortingPublishers(
+			[FromQuery] string? SortField = "Title",
+			[FromQuery] bool SortDescending = false) // Sắp xếp theo tiêu đề hoặc Id trong repo service
+		{
+			var publisher = await _publisherRepository.SortingPublishersAsync(SortField, SortDescending);
+			if (publisher == null || !publisher.Any()) return NotFound("Không tìm thấy các nxb");
+			return Ok(publisher);
+		}
 
 		[HttpGet]
 		public async Task<ActionResult<IEnumerable<Publisher>>> GetAllPublishers()

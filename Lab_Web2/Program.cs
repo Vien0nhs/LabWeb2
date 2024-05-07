@@ -13,6 +13,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
 builder.Services.AddDbContext<LibaryDbContext>(options => 
 options.UseSqlServer(builder.Configuration.GetConnectionString("LCS")));
 

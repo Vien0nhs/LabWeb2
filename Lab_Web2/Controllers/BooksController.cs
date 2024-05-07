@@ -24,8 +24,34 @@ namespace Lab_Web2.Controllers
             _context = context;
             _ibookRepository = ibookRepository;
         }
+		[HttpGet("Paged")]
+		public async Task<ActionResult<IEnumerable<Book>>> GetPagedBook(
+			[FromQuery] int page = 1,
+			[FromQuery] int pageSize = 10) // Pagination for Book
+		{
+			if (page <= 0 || pageSize <= 0) return BadRequest("Số trang và kích thước trang phải từ 1 trở lên");
+			var Books = await _ibookRepository.PaginationBooksAsync(page, pageSize);
 
-        [HttpGet]
+			return Ok(Books);
+		}
+		[HttpGet("All")]
+		public async Task<ActionResult<IEnumerable<Book>>> GetAllBooks([FromQuery] string? title = null) // Tìm all sach
+		{
+			var Book = await _ibookRepository.FilterBooksAsync(title);
+			if (Book == null || !Book.Any()) return NotFound($"Không tìm thấy các cuon sach có tiêu đề {title}.");
+			return Ok(Book);
+		}
+		[HttpGet("Sort")]
+		public async Task<ActionResult<IEnumerable<Book>>> SortingBooks(
+			[FromQuery] string? SortField = "Title",
+			[FromQuery] bool SortDescending = false) // Sắp xếp theo tiêu đề hoặc Id trong repo service
+		{
+			var book = await _ibookRepository.SortingBooksAsync(SortField, SortDescending);
+			if (book == null || !book.Any()) return NotFound("Không tìm thấy các cuon sach");
+			return Ok(book);
+		}
+
+		[HttpGet]
 		public async Task<ActionResult<IEnumerable<BookDTO>>> GetAllBooks()
 		{
 			var book = await _ibookRepository.GetAllBooks();

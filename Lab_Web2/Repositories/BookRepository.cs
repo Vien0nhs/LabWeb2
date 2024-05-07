@@ -5,7 +5,7 @@ using Lab_Web2.EntitiesDTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Policy;
-
+#nullable disable
 namespace Lab_Web2.Repositories
 {
 	public class BookRepository : IBookRepository
@@ -20,7 +20,7 @@ namespace Lab_Web2.Repositories
 			return await _context.Books.ToListAsync();
 		}
 
-		public async Task<ActionResult<Book?>> GetBookById(int id)
+		public async Task<ActionResult<Book>> GetBookById(int id)
 		{
 			return await _context.Books.FindAsync(id);		
 		}
@@ -61,6 +61,47 @@ namespace Lab_Web2.Repositories
 				_context.Books.Remove(book);
 				await _context.SaveChangesAsync();
 			}
+		}
+		public async Task<IEnumerable<Book>> FilterBooksAsync(string title = null)
+		{
+			var query = _context.Books.AsQueryable();
+
+			if (!string.IsNullOrEmpty(title))
+			{
+				query = query.Where(a => a.Title.Contains(title));
+			}
+			return await query.ToListAsync();
+		}
+		public async Task<IEnumerable<Book>> SortingBooksAsync(string Sort = "Title", bool SortDescending = false)
+		{
+			var book = _context.Books.AsQueryable();
+			switch (Sort)
+			{
+				case "Title":
+					{
+						book = SortDescending ? book.OrderByDescending(a => a.Title) : book.OrderBy(a => a.Title);
+						break;
+					}
+				case "BookId":
+					{
+						book = SortDescending ? book.OrderByDescending(a => a.Title) : book.OrderBy(a => a.Title);
+						break;
+					}
+				default:
+					{
+						book = book.OrderBy(a => a.Title);
+						break;
+					}
+			}
+			return await book.ToListAsync();
+		}
+		public async Task<IEnumerable<Book>> PaginationBooksAsync(int page = 1, int pageSize = 10)
+		{
+			var query = _context.Books.AsQueryable();
+			return await query
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
 		}
 	}
 }
