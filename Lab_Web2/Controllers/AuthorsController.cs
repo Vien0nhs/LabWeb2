@@ -10,21 +10,25 @@ using Lab_Web2.Enities;
 using Lab_Web2.EntitiesDTO;
 using Lab_Web2.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.Json;
 
 namespace Lab_Web2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
 
     public class AuthorsController : ControllerBase
     {
         private readonly LibaryDbContext _context;
         private readonly IAuthorRepository _iauthorRepository;
+        private readonly ILogger<BooksController> _logger;
 
-        public AuthorsController(LibaryDbContext context, IAuthorRepository iauthorrepository)
+        public AuthorsController(LibaryDbContext context, IAuthorRepository iauthorrepository, ILogger<BooksController> logger)
         {
             _context = context;
             _iauthorRepository = iauthorrepository;
+            _logger = logger;
         }
 
         [HttpGet("Paged")]
@@ -38,11 +42,17 @@ namespace Lab_Web2.Controllers
 			return Ok(Authors);
 		}
         [HttpGet("All")]
+        [Authorize(Roles = "Read")]
         public async Task<ActionResult<IEnumerable<Author>>> GetAllAuthors([FromQuery] string? name = null) // Tìm all tác giả
         {
+            _logger.LogInformation("GetAll Book Action method was invoked");
+            _logger.LogWarning("This is a warning log");
+            _logger.LogError("This is a error log");
             var author = await _iauthorRepository.FilterAuthorsAsync(name);
             if (author == null || !author.Any()) return NotFound($"Không tìm thấy các tác giả có tên {name}.");
-			return Ok(author);
+            _logger.LogInformation($"Finished GetAllBook request with data {JsonSerializer.Serialize(author)}"); 
+
+            return Ok(author);
         }
         [HttpGet("Sort")]
 		public async Task<ActionResult<IEnumerable<Author>>> SortingAuthors(
@@ -62,7 +72,7 @@ namespace Lab_Web2.Controllers
 		}
 
 		[HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Roles = "Read,Write")]
         public async Task<IActionResult> UpdateAuthor(int id, UpdateAuthorDTO updateAuthorDTO)
         {
             var author = await _context.Authors.FindAsync(id);
@@ -73,7 +83,7 @@ namespace Lab_Web2.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = "Read,Write")]
         public async Task<ActionResult<Author>> CreateAuthor(CreateAuthorDTO CAuthorDIO)
         {
             if (string.IsNullOrEmpty(CAuthorDIO.Name)) return BadRequest("Tên là bắt buộc.");
@@ -82,7 +92,7 @@ namespace Lab_Web2.Controllers
 		}
 
 		[HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(Roles = "Read,Write")]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
             var author = await _context.Authors.FindAsync(id);
