@@ -9,11 +9,13 @@ using Lab_Web2.Data;
 using Lab_Web2.Enities;
 using Lab_Web2.EntitiesDTO;
 using Lab_Web2.Repositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Lab_Web2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class AuthorsController : ControllerBase
     {
         private readonly LibaryDbContext _context;
@@ -24,6 +26,7 @@ namespace Lab_Web2.Controllers
             _context = context;
             _iauthorRepository = iauthorrepository;
         }
+
         [HttpGet("Paged")]
         public async Task<ActionResult<IEnumerable<Author>>> GetPagedAuthor(
             [FromQuery] int page = 1, 
@@ -59,6 +62,7 @@ namespace Lab_Web2.Controllers
 		}
 
 		[HttpPut("{id}")]
+        [Authorize]
         public async Task<IActionResult> UpdateAuthor(int id, UpdateAuthorDTO updateAuthorDTO)
         {
             var author = await _context.Authors.FindAsync(id);
@@ -69,6 +73,7 @@ namespace Lab_Web2.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public async Task<ActionResult<Author>> CreateAuthor(CreateAuthorDTO CAuthorDIO)
         {
             if (string.IsNullOrEmpty(CAuthorDIO.Name)) return BadRequest("Tên là bắt buộc.");
@@ -77,6 +82,7 @@ namespace Lab_Web2.Controllers
 		}
 
 		[HttpDelete("{id}")]
+        [Authorize]
         public async Task<IActionResult> DeleteAuthor(int id)
         {
             var author = await _context.Authors.FindAsync(id);
